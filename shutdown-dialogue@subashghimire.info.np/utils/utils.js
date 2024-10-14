@@ -4,6 +4,6 @@ export function setKeybinding(settings, key, value) {
     settings.set_strv(key, value);
 }
 
-export function removeKeybindingHandler(name) {
+export function removeKeybinding(name) {
     Main.wm.removeKeybinding(name);
 }
