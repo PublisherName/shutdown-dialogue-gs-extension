@@ -1,0 +1,11 @@
+.shutdown-dialogue {
+    background-color: #2e3436;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.dialog-content {
+    color: #ffffff;
+    font-size: 16px;
+    padding: auto;
+}

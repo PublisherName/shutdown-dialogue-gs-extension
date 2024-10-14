@@ -1,12 +1,14 @@
 import Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-
+import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { setKeybinding, removeKeybinding } from './utils/utils.js';
-
 
 export default class ShutdownDialogueExtension extends Extension {
 
@@ -38,7 +40,59 @@ export default class ShutdownDialogueExtension extends Extension {
 		if (activeWindow) {
 			activeWindow.delete(global.get_current_time());
 		} else {
-			Main.notify('All windows are closed', 'No windows to close');
+			this._showShutdownDialogue();
+		}
+	}
+
+	_showShutdownDialogue() {
+		const dialog = new ModalDialog.ModalDialog({
+			destroyOnClose: false,
+			styleClass: 'shutdown-dialogue',
+		});
+
+		const mainContentBox = new St.BoxLayout({ vertical: false, style_class: 'dialog-content' });
+		dialog.contentLayout.add_child(mainContentBox);
+
+		const message = new St.Label({ text: 'Do you want to shut down the system?' });
+		mainContentBox.add_child(message);
+
+		const buttonBox = new St.BoxLayout({ vertical: false });
+		dialog.contentLayout.add_child(buttonBox);
+
+		dialog.setButtons([
+			{
+				label: 'Yes',
+				action: () => {
+					dialog.close();
+					this._shutdownSystem();
+				},
+				key: Clutter.KEY_Return,
+				default: true
+			},
+			{
+				label: 'No',
+				action: () => {
+					dialog.close();
+				},
+				key: Clutter.KEY_Escape
+			}
+		]);
+
+		dialog.open();
+	}
+
+	_shutdownSystem() {
+		const [success, pid] = GLib.spawn_async(
+			null,
+			['/usr/bin/systemctl', 'poweroff'],
+			null,
+			GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+			null
+		);
+		if (success) {
+			GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
+				GLib.spawn_close_pid(pid);
+			});
 		}
 	}
 
