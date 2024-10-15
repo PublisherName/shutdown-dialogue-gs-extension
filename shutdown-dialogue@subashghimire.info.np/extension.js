@@ -12,16 +12,26 @@ import { setKeybinding, removeKeybinding } from './utils/utils.js';
 
 export default class ShutdownDialogueExtension extends Extension {
 
+	toggleExtension(enable) {
+		if (enable) {
+			this._wmKeybindingsSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.keybindings' });
+			this._customKeybindingsSettings = this.getSettings('org.gnome.shell.extensions.shutdown-dialogue');
+			this._disableCloseBinding();
+			this._enableCustomAltF4Binding();
+		} else {
+			this._disableCustomAltF4Binding();
+			this._enableCloseBinding();
+			this._wmKeybindingsSettings = null;
+			this._customKeybindingsSettings = null;
+		}
+	}
+
 	enable() {
-		this._wmKeybindingsSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.keybindings' });
-		this._customKeybindingsSettings = this.getSettings('org.gnome.shell.extensions.shutdown-dialogue');
-		this._disableCloseBinding();
-		this._enableCustomAltF4Binding();
+		this.toggleExtension(true);
 	}
 
 	disable() {
-		this._disableCustomAltF4Binding();
-		this._enableCloseBinding();
+		this.toggleExtension(false);
 	}
 
 	_enableCustomAltF4Binding() {
@@ -105,6 +115,7 @@ export default class ShutdownDialogueExtension extends Extension {
 	}
 
 	_disableCustomAltF4Binding() {
+		setKeybinding(this._customKeybindingsSettings, 'custom-alt-f4', []);
 		removeKeybinding('custom-alt-f4');
 	}
 }
