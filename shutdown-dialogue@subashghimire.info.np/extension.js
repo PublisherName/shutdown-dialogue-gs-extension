@@ -12,26 +12,18 @@ import { setKeybinding, removeKeybinding } from './utils/utils.js';
 
 export default class ShutdownDialogueExtension extends Extension {
 
-	toggleExtension(enable) {
-		if (enable) {
-			this._wmKeybindingsSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.keybindings' });
-			this._customKeybindingsSettings = this.getSettings('org.gnome.shell.extensions.shutdown-dialogue');
-			this._disableCloseBinding();
-			this._enableCustomAltF4Binding();
-		} else {
-			this._disableCustomAltF4Binding();
-			this._enableCloseBinding();
-			this._wmKeybindingsSettings = null;
-			this._customKeybindingsSettings = null;
-		}
-	}
-
 	enable() {
-		this.toggleExtension(true);
+		this._wmKeybindingsSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.keybindings' });
+		this._customKeybindingsSettings = this.getSettings('org.gnome.shell.extensions.shutdown-dialogue');
+		this._disableCloseBinding();
+		this._enableCustomAltF4Binding();
 	}
 
 	disable() {
-		this.toggleExtension(false);
+		this._disableCustomAltF4Binding();
+		this._enableCloseBinding();
+		this._wmKeybindingsSettings = null;
+		this._customKeybindingsSettings = null;
 	}
 
 	_enableCustomAltF4Binding() {
@@ -100,8 +92,9 @@ export default class ShutdownDialogueExtension extends Extension {
 			null
 		);
 		if (success) {
-			GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
+			const watchId = GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
 				GLib.spawn_close_pid(pid);
+				GLib.Source.remove(watchId);
 			});
 		}
 	}
