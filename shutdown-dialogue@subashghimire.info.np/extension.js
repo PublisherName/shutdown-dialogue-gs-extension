@@ -24,6 +24,9 @@ export default class ShutdownDialogueExtension extends Extension {
 		this._enableCloseBinding();
 		this._wmKeybindingsSettings = null;
 		this._customKeybindingsSettings = null;
+		if (this._watchId) {
+			GLib.Source.remove(this._watchId);
+		}
 	}
 
 	_enableCustomAltF4Binding() {
@@ -92,7 +95,10 @@ export default class ShutdownDialogueExtension extends Extension {
 			null
 		);
 		if (success) {
-			const watchId = GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
+			if (this._watchId) {
+				GLib.Source.remove(this._watchId);
+			}
+			this._watchId = GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
 				GLib.spawn_close_pid(pid);
 				GLib.Source.remove(watchId);
 			});
