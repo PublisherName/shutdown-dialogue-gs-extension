@@ -1,12 +1,12 @@
 {
-	"uuid": "shutdown-dialogue@subashghimire.info.np",
-	"name": "Shutdown Dialogue",
-	"description": "Shutdown Dialogue using Alt + F4",
-	"url": "https://github.com/publishername/shutdown-dialogue-gs-extension",
-	"shell-version": [
-		"45",
-		"46",
-		"47"
-	],
-	"version": 5
+    "uuid": "shutdown-dialogue@subashghimire.info.np",
+    "name": "Shutdown Dialogue",
+    "description": "Shutdown Dialogue using Alt + F4",
+    "url": "https://github.com/publishername/shutdown-dialogue-gs-extension",
+    "shell-version": [
+        "45",
+        "46",
+        "47"
+    ],
+    "version": 6
 }

@@ -41,10 +41,23 @@ export default class ShutdownDialogueExtension extends Extension {
 	}
 
 	_onAltF4Pressed() {
-		const activeWindow = global.display.get_focus_window();
-		if (activeWindow) {
-			activeWindow.delete(global.get_current_time());
-		} else {
+		try {
+			const currentTime = global.get_current_time();
+			const activeWindow = global.display.get_focus_window();
+			const windowTitle = activeWindow ? activeWindow.get_title() : null;
+
+			// Patch for desktop overlay.
+			if (!activeWindow ||
+				!windowTitle ||
+				windowTitle === '@!0,0;BDHF' ||
+				Main.overview.visible) {
+				this._showShutdownDialogue();
+				return;
+			}
+
+			activeWindow.delete(currentTime);
+		} catch (error) {
+			console.error('[Shutdown Dialogue] Error:', error);
 			this._showShutdownDialogue();
 		}
 	}
