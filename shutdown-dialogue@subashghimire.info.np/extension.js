@@ -50,6 +50,7 @@ export default class ShutdownDialogueExtension extends Extension {
 			if (!activeWindow ||
 				!windowTitle ||
 				windowTitle === '@!0,0;BDHF' ||
+				windowTitle.startsWith('Desktop Icons ') ||
 				Main.overview.visible) {
 				this._showShutdownDialogue();
 				return;
