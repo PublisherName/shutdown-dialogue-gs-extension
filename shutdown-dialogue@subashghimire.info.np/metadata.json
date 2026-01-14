@@ -10,5 +10,6 @@
         "48",
         "49"
     ],
-    "version": 7
+    "version": 12,
+    "gettext-domain": "shutdown-dialogue@subashghimire.info.np"
 }

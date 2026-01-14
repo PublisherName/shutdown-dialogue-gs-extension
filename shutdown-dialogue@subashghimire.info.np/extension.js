@@ -5,7 +5,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 
-import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { setKeybinding, removeKeybinding } from './utils/utils.js';
@@ -17,6 +17,7 @@ export default class ShutdownDialogueExtension extends Extension {
 		this._customKeybindingsSettings = this.getSettings('org.gnome.shell.extensions.shutdown-dialogue');
 		this._disableCloseBinding();
 		this._enableCustomAltF4Binding();
+		this._selectedOptionIndex = 0;
 	}
 
 	disable() {
@@ -46,7 +47,6 @@ export default class ShutdownDialogueExtension extends Extension {
 			const activeWindow = global.display.get_focus_window();
 			const windowTitle = activeWindow ? activeWindow.get_title() : null;
 
-			// Patch for desktop overlay.
 			if (!activeWindow ||
 				!windowTitle ||
 				windowTitle === '@!0,0;BDHF' ||
@@ -69,27 +69,77 @@ export default class ShutdownDialogueExtension extends Extension {
 			styleClass: 'shutdown-dialogue',
 		});
 
-		const mainContentBox = new St.BoxLayout({ vertical: false, style_class: 'dialog-content' });
+		const mainContentBox = new St.BoxLayout({
+			vertical: true,
+			style_class: 'dialog-content'
+		});
 		dialog.contentLayout.add_child(mainContentBox);
 
-		const message = new St.Label({ text: 'Do you want to shut down the system?' });
-		mainContentBox.add_child(message);
+		const titleLabel = new St.Label({
+			text: this.gettext('Select an action:'),
+			style_class: 'header-label',
+			x_align: Clutter.ActorAlign.CENTER
+		});
+		mainContentBox.add_child(titleLabel);
 
-		const buttonBox = new St.BoxLayout({ vertical: false });
-		dialog.contentLayout.add_child(buttonBox);
+		const optionsContainer = new St.BoxLayout({
+			vertical: true,
+			x_align: Clutter.ActorAlign.CENTER
+		});
+		mainContentBox.add_child(optionsContainer);
+
+		this._optionItems = [];
+		this._selectedOptionIndex = 0;
+
+		this._options = [
+			{ name: this.gettext('Shutdown'), action: 'poweroff', icon: 'system-shutdown-symbolic' },
+			{ name: this.gettext('Suspend'), action: 'suspend', icon: 'weather-clear-night-symbolic' },
+			{ name: this.gettext('Restart'), action: 'reboot', icon: 'system-reboot-symbolic' },
+			{ name: this.gettext('Log Out'), action: 'logout', icon: 'system-log-out-symbolic' }
+		];
+
+		this._options.forEach((option, index) => {
+			const itemBox = new St.BoxLayout({
+				vertical: false,
+				style_class: 'option-item',
+				x_align: Clutter.ActorAlign.FILL,
+				y_align: Clutter.ActorAlign.CENTER
+			});
+
+			const icon = new St.Icon({
+				icon_name: option.icon,
+				style_class: 'option-icon',
+				icon_size: 24
+			});
+
+			icon.set_style('margin-right: 15px; margin-left: 15px;');
+
+			const label = new St.Label({
+				text: option.name,
+				y_align: Clutter.ActorAlign.CENTER
+			});
+
+			itemBox.add_child(icon);
+			itemBox.add_child(label);
+
+			optionsContainer.add_child(itemBox);
+			this._optionItems.push(itemBox);
+		});
+
+		this._updateOptionStyles();
 
 		dialog.setButtons([
 			{
-				label: 'Yes',
+				label: this.gettext('OK'),
 				action: () => {
 					dialog.close();
-					this._shutdownSystem();
+					this._executeAction(this._options[this._selectedOptionIndex].action);
 				},
 				key: Clutter.KEY_Return,
 				default: true
 			},
 			{
-				label: 'No',
+				label: this.gettext('Cancel'),
 				action: () => {
 					dialog.close();
 				},
@@ -97,13 +147,82 @@ export default class ShutdownDialogueExtension extends Extension {
 			}
 		]);
 
+		dialog.connect('key-press-event', (actor, event) => {
+			const symbol = event.get_key_symbol();
+
+			if (symbol === Clutter.KEY_Up) {
+				this._selectedOptionIndex = (this._selectedOptionIndex - 1 + this._options.length) % this._options.length;
+				this._updateOptionStyles();
+				return Clutter.EVENT_STOP;
+			} else if (symbol === Clutter.KEY_Down) {
+				this._selectedOptionIndex = (this._selectedOptionIndex + 1) % this._options.length;
+				this._updateOptionStyles();
+				return Clutter.EVENT_STOP;
+			}
+
+			return Clutter.EVENT_PROPAGATE;
+		});
+
 		dialog.open();
 	}
 
-	_shutdownSystem() {
+	_updateOptionStyles() {
+		this._optionItems.forEach((item, index) => {
+			if (index === this._selectedOptionIndex) {
+				item.add_style_class_name('option-item-selected');
+			} else {
+				item.remove_style_class_name('option-item-selected');
+			}
+		});
+	}
+
+	_executeAction(action) {
+		if (action === 'logout') {
+			const command = ['/usr/bin/gnome-session-quit', '--logout', '--no-prompt'];
+			this._spawnCommand(command);
+			return;
+		}
+
+		const actionMap = {
+			'poweroff': 'PowerOff',
+			'reboot': 'Reboot',
+			'suspend': 'Suspend'
+		};
+		const method = actionMap[action];
+
+		if (!method) return;
+
+		Gio.bus_get(Gio.BusType.SYSTEM, null, (source, result) => {
+			try {
+				const connection = Gio.bus_get_finish(result);
+				connection.call(
+					'org.freedesktop.login1',
+					'/org/freedesktop/login1',
+					'org.freedesktop.login1.Manager',
+					method,
+					GLib.Variant.new('(b)', [true]),
+					null,
+					Gio.DBusCallFlags.NONE,
+					-1,
+					null,
+					(conn, res) => {
+						try {
+							conn.call_finish(res);
+						} catch (e) {
+							console.error(`[Shutdown Dialogue] Failed to call ${method}: ${e.message}`);
+						}
+					}
+				);
+			} catch (e) {
+				console.error('[Shutdown Dialogue] Failed to get system bus:', e);
+			}
+		});
+	}
+
+	_spawnCommand(command) {
 		const [success, pid] = GLib.spawn_async(
 			null,
-			['/usr/bin/systemctl', 'poweroff'],
+			command,
 			null,
 			GLib.SpawnFlags.DO_NOT_REAP_CHILD,
 			null
@@ -114,7 +233,7 @@ export default class ShutdownDialogueExtension extends Extension {
 			}
 			this._watchId = GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, () => {
 				GLib.spawn_close_pid(pid);
-				GLib.Source.remove(watchId);
+				this._watchId = 0;
 			});
 		}
 	}

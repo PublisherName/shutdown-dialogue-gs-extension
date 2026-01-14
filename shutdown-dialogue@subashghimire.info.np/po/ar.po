@@ -1,0 +1,40 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Shutdown Dialogue\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-14 12:00+0000\n"
+"PO-Revision-Date: 2026-01-14 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:77
+msgid "Select an action:"
+msgstr "اختر إجراء:"
+
+#: extension.js:86
+msgid "Shutdown"
+msgstr "إيقاف التشغيل"
+
+#: extension.js:87
+msgid "Suspend"
+msgstr "وضع السكون"
+
+#: extension.js:88
+msgid "Restart"
+msgstr "إعادة التشغيل"
+
+#: extension.js:89
+msgid "Log Out"
+msgstr "تسجيل الخروج"
+
+#: extension.js:125
+msgid "OK"
+msgstr "حسناً"
+
+#: extension.js:134
+msgid "Cancel"
+msgstr "إلغاء"
