@@ -51,6 +51,23 @@ This GNOME Shell extension provides a custom keybinding for Alt+F4 to show a shu
 - Press Alt+F4 to trigger the shutdown dialogue when no windows are open.
 - The extension will show a dialogue when no windows are open and asking if you want to shut down.
 
+## Testing
+
+1. Install dependency
+```bash
+uv sync
+```
+
+2. Build a zip
+```bash
+./build.sh
+```
+
+3. Check the zip
+```bash
+uv run shutdown-dialogue@subashghimire.info.np.zip
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
