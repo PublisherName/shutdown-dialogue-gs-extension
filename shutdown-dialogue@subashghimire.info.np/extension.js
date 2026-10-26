@@ -69,13 +69,13 @@ export default class ShutdownDialogueExtension extends Extension {
 			styleClass: 'shutdown-dialogue',
 		});
 
-		const mainContentBox = new St.BoxLayout({ vertical: false, style_class: 'dialog-content' });
+		const mainContentBox = new St.BoxLayout({ style_class: 'dialog-content' });
 		dialog.contentLayout.add_child(mainContentBox);
 
 		const message = new St.Label({ text: 'Do you want to shut down the system?' });
 		mainContentBox.add_child(message);
 
-		const buttonBox = new St.BoxLayout({ vertical: false });
+		const buttonBox = new St.BoxLayout();
 		dialog.contentLayout.add_child(buttonBox);
 
 		dialog.setButtons([
